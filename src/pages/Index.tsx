@@ -1,13 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { HeroSection, FeaturesSection, TestimonialsSection, CTASection, Footer } from "@/components/landing/LandingSections";
+import { Helmet } from "react-helmet-async";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <>
+      <Helmet>
+        <title>GrowthPath - Student Growth & Problem-Solving Platform</title>
+        <meta name="description" content="A student-led platform for learning, building teams, and solving real-world problems. Created by students, for students." />
+      </Helmet>
+      <main className="min-h-screen">
+        <HeroSection />
+        <FeaturesSection />
+        <TestimonialsSection />
+        <CTASection />
+        <Footer />
+      </main>
+    </>
   );
 };
 

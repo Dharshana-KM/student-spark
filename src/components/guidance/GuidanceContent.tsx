@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Play, Clock, User, Filter, Search } from "lucide-react";
+import { Play, Clock, User, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,65 +11,115 @@ const categories = ["All", "Career", "Skills", "Preparation", "Mindset"];
 const podcasts = [
   {
     id: "1",
-    title: "Finding Your Path After Graduation",
-    speaker: "Dr. Ananya Singh",
-    role: "Professor, IIT Delhi",
+    title: "How to Find Your Purpose",
+    speaker: "Simon Sinek",
+    role: "Author & Speaker",
+    source: "TEDx",
     category: "Career",
-    duration: "32 min",
-    thumbnail: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop",
-    description: "A candid conversation about career choices and finding your true calling.",
+    duration: "18 min",
+    thumbnail: "https://img.youtube.com/vi/u4ZoJKF_VuA/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/u4ZoJKF_VuA",
+    description: "Discover how to find meaning and purpose in your work and life.",
   },
   {
     id: "2",
-    title: "Building Real Skills That Matter",
-    speaker: "Rahul Mehra",
-    role: "4th Year, IIT Bombay",
-    category: "Skills",
-    duration: "28 min",
-    thumbnail: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=400&h=300&fit=crop",
-    description: "How I learned programming and built my first startup as a student.",
+    title: "The Power of Believing That You Can Improve",
+    speaker: "Carol Dweck",
+    role: "Professor, Stanford",
+    source: "TED",
+    category: "Mindset",
+    duration: "10 min",
+    thumbnail: "https://img.youtube.com/vi/_X0mgOOSpLU/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/_X0mgOOSpLU",
+    description: "Learn about the growth mindset and how it can transform your learning.",
   },
   {
     id: "3",
-    title: "Mental Health for Students",
-    speaker: "Dr. Priya Patel",
-    role: "Counselor, IIT Madras",
+    title: "Inside the Mind of a Master Procrastinator",
+    speaker: "Tim Urban",
+    role: "Writer & Blogger",
+    source: "TED",
     category: "Mindset",
-    duration: "45 min",
-    thumbnail: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&h=300&fit=crop",
-    description: "Strategies for managing stress, anxiety, and maintaining balance during college.",
+    duration: "14 min",
+    thumbnail: "https://img.youtube.com/vi/arj7oStGLkU/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/arj7oStGLkU",
+    description: "A hilarious and insightful look into why we procrastinate.",
   },
   {
     id: "4",
-    title: "Cracking Technical Interviews",
-    speaker: "Vikram Kumar",
-    role: "Google Engineer, IIT Kanpur Alumnus",
-    category: "Preparation",
-    duration: "52 min",
-    thumbnail: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop",
-    description: "My journey from campus placements to FAANG, and tips that actually work.",
+    title: "How to Speak So That People Want to Listen",
+    speaker: "Julian Treasure",
+    role: "Sound Expert",
+    source: "TED",
+    category: "Skills",
+    duration: "10 min",
+    thumbnail: "https://img.youtube.com/vi/eIho2S0ZahI/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/eIho2S0ZahI",
+    description: "Master the art of communication and become a better speaker.",
   },
   {
     id: "5",
-    title: "The Power of Saying Yes",
-    speaker: "Neha Sharma",
-    role: "3rd Year, IIT Kharagpur",
+    title: "The Happy Secret to Better Work",
+    speaker: "Shawn Achor",
+    role: "Positive Psychology Researcher",
+    source: "TED",
     category: "Mindset",
-    duration: "24 min",
-    thumbnail: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop",
-    description: "How stepping out of my comfort zone changed everything.",
+    duration: "12 min",
+    thumbnail: "https://img.youtube.com/vi/fLJsdqxnZb0/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/fLJsdqxnZb0",
+    description: "Discover how happiness inspires productivity, not the other way around.",
   },
   {
     id: "6",
-    title: "Open Source for Beginners",
-    speaker: "Arjun Reddy",
-    role: "2nd Year, NIT Warangal",
+    title: "Grit: The Power of Passion and Perseverance",
+    speaker: "Angela Lee Duckworth",
+    role: "Psychologist & Author",
+    source: "TED",
+    category: "Preparation",
+    duration: "6 min",
+    thumbnail: "https://img.youtube.com/vi/H14bBuluwB8/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/H14bBuluwB8",
+    description: "Why grit is a better predictor of success than IQ or talent.",
+  },
+  {
+    id: "7",
+    title: "The Skill of Self Confidence",
+    speaker: "Dr. Ivan Joseph",
+    role: "Athletic Director",
+    source: "TEDx",
     category: "Skills",
-    duration: "38 min",
-    thumbnail: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=300&fit=crop",
-    description: "Your first contribution to open source — a step-by-step guide.",
+    duration: "13 min",
+    thumbnail: "https://img.youtube.com/vi/w-HYZv6HzAs/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/w-HYZv6HzAs",
+    description: "Learn how to build unshakeable self-confidence as a skill.",
+  },
+  {
+    id: "8",
+    title: "Your Body Language May Shape Who You Are",
+    speaker: "Amy Cuddy",
+    role: "Social Psychologist",
+    source: "TED",
+    category: "Preparation",
+    duration: "21 min",
+    thumbnail: "https://img.youtube.com/vi/Ks-_Mh1QhMc/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/Ks-_Mh1QhMc",
+    description: "How power poses can change your life and career outcomes.",
+  },
+  {
+    id: "9",
+    title: "Why the Best Hire Might Not Have the Perfect Resume",
+    speaker: "Regina Hartley",
+    role: "HR Executive",
+    source: "TED",
+    category: "Career",
+    duration: "10 min",
+    thumbnail: "https://img.youtube.com/vi/jiDQDLnEXdA/maxresdefault.jpg",
+    videoUrl: "https://www.youtube.com/embed/jiDQDLnEXdA",
+    description: "Why scrappy fighters often outperform those with perfect backgrounds.",
   },
 ];
+
+export { podcasts };
 
 export function GuidanceContent() {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -94,7 +144,7 @@ export function GuidanceContent() {
           Guidance Hub
         </h1>
         <p className="text-muted-foreground text-lg">
-          Learn from IIT students and professors who've walked the path before you.
+          Learn from world-class speakers, professors, and thought leaders.
         </p>
       </motion.div>
 
@@ -120,7 +170,7 @@ export function GuidanceContent() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
-            placeholder="Search podcasts..."
+            placeholder="Search talks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -157,6 +207,9 @@ export function GuidanceContent() {
                   src={podcast.thumbnail}
                   alt={podcast.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop";
+                  }}
                 />
                 <div className="absolute inset-0 bg-foreground/20 group-hover:bg-foreground/10 transition-colors" />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -164,12 +217,13 @@ export function GuidanceContent() {
                     <Play className="w-6 h-6 text-primary-foreground ml-1" />
                   </div>
                 </div>
-                <Badge className="absolute top-3 left-3" variant="secondary">
-                  {podcast.category}
-                </Badge>
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <Badge variant="secondary">{podcast.category}</Badge>
+                  <Badge variant="outline" className="bg-background/80">{podcast.source}</Badge>
+                </div>
               </div>
               <div className="p-5">
-                <h3 className="font-display font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+                <h3 className="font-display font-semibold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2">
                   {podcast.title}
                 </h3>
                 <p className="text-muted-foreground text-sm mb-4 line-clamp-2">

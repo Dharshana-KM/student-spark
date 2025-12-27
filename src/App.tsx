@@ -16,6 +16,7 @@ import Impact from "./pages/Impact";
 import Teams from "./pages/Teams";
 import Profile from "./pages/Profile";
 import PodcastDetail from "./pages/PodcastDetail";
+import Welcome from "./pages/Welcome";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/impact" element={<Impact />} />
               <Route path="/teams" element={<Teams />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/welcome" element={<Welcome />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

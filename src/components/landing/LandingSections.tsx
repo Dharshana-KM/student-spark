@@ -99,14 +99,14 @@ export function HeroSection() {
           {/* CTA Buttons */}
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="hero" size="xl" asChild>
-              <Link to="/dashboard">
+              <Link to="/auth">
                 Start Your Journey
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
             <Button variant="glass" size="xl" asChild>
-              <Link to="/guidance">
-                Explore Guidance
+              <Link to="/auth">
+                Sign In
               </Link>
             </Button>
           </motion.div>
@@ -240,7 +240,7 @@ export function CTASection() {
             Join thousands of students who are learning, building, and growing together.
           </p>
           <Button variant="glass" size="xl" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/30" asChild>
-            <Link to="/dashboard">
+            <Link to="/auth">
               Get Started Free
               <ArrowRight className="w-5 h-5" />
             </Link>

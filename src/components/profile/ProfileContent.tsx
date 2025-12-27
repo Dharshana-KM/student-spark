@@ -1,56 +1,42 @@
 import { motion } from "framer-motion";
 import { 
-  User, 
-  Mail, 
   MapPin, 
   GraduationCap, 
   Calendar,
   Edit,
   Github,
   Linkedin,
-  Globe,
   BookOpen,
   Rocket,
   Users,
   Trophy,
-  ExternalLink,
-  Save
+  Save,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileData {
-  name: string;
+  full_name: string;
   email: string;
   college: string;
-  year: string;
+  graduation_year: string;
   location: string;
   bio: string;
-  linkedinUrl: string;
-  githubUrl: string;
-  websiteUrl: string;
+  linkedin_url: string;
+  github_url: string;
+  avatar_url: string;
   skills: string[];
   interests: string[];
+  career_goal: string;
 }
-
-const initialProfile: ProfileData = {
-  name: "Alex Student",
-  email: "alex@example.com",
-  college: "IIT Delhi",
-  year: "3rd Year, B.Tech CSE",
-  location: "New Delhi, India",
-  bio: "Passionate about building technology that makes a difference. Currently exploring ML and sustainable tech. Love collaborating with fellow students on meaningful projects.",
-  linkedinUrl: "https://linkedin.com/in/alexstudent",
-  githubUrl: "https://github.com/alexstudent",
-  websiteUrl: "",
-  skills: ["React", "Python", "Machine Learning", "Node.js", "Figma"],
-  interests: ["Environment", "Healthcare", "AI/ML", "EdTech"],
-};
 
 const stats = [
   { label: "Courses Completed", value: 4, icon: BookOpen, color: "text-primary" },
@@ -66,18 +52,122 @@ const achievements = [
 ];
 
 export function ProfileContent() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState<ProfileData>(initialProfile);
-  const [editedProfile, setEditedProfile] = useState<ProfileData>(initialProfile);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [editedProfile, setEditedProfile] = useState<ProfileData | null>(null);
 
-  const handleSave = () => {
-    setProfile(editedProfile);
-    setIsEditing(false);
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      const profileData: ProfileData = {
+        full_name: data.full_name || '',
+        email: data.email || user.email || '',
+        college: data.college || '',
+        graduation_year: data.graduation_year || '',
+        location: data.location || '',
+        bio: data.bio || '',
+        linkedin_url: data.linkedin_url || '',
+        github_url: data.github_url || '',
+        avatar_url: data.avatar_url || '',
+        skills: data.skills || [],
+        interests: data.interests || [],
+        career_goal: data.career_goal || '',
+      };
+
+      setProfile(profileData);
+      setEditedProfile(profileData);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user || !editedProfile) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editedProfile.full_name,
+          college: editedProfile.college,
+          graduation_year: editedProfile.graduation_year,
+          location: editedProfile.location,
+          bio: editedProfile.bio,
+          linkedin_url: editedProfile.linkedin_url,
+          github_url: editedProfile.github_url,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setProfile(editedProfile);
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
     setEditedProfile(profile);
     setIsEditing(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!profile || !editedProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Profile not found</p>
+      </div>
+    );
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
   };
 
   return (
@@ -92,20 +182,20 @@ export function ProfileContent() {
         <div className="h-32 rounded-2xl gradient-primary" />
         <div className="absolute -bottom-16 left-6 flex items-end gap-6">
           <Avatar className="w-32 h-32 border-4 border-card shadow-card">
-            <AvatarImage src="" />
+            <AvatarImage src={profile.avatar_url} />
             <AvatarFallback className="text-4xl bg-muted">
-              {profile.name.split(' ').map(n => n[0]).join('')}
+              {getInitials(profile.full_name)}
             </AvatarFallback>
           </Avatar>
         </div>
         <div className="absolute top-4 right-4">
           {isEditing ? (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleCancel}>
+              <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                <Save className="w-4 h-4 mr-2" />
+              <Button size="sm" onClick={handleSave} disabled={saving}>
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Save
               </Button>
             </div>
@@ -129,12 +219,15 @@ export function ProfileContent() {
           <div className="space-y-2">
             {isEditing ? (
               <Input
-                value={editedProfile.name}
-                onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
+                value={editedProfile.full_name}
+                onChange={(e) => setEditedProfile({ ...editedProfile, full_name: e.target.value })}
                 className="text-2xl font-display font-bold h-auto py-1"
+                placeholder="Your name"
               />
             ) : (
-              <h1 className="text-2xl lg:text-3xl font-display font-bold">{profile.name}</h1>
+              <h1 className="text-2xl lg:text-3xl font-display font-bold">
+                {profile.full_name || 'Add your name'}
+              </h1>
             )}
             
             <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
@@ -145,21 +238,23 @@ export function ProfileContent() {
                     value={editedProfile.college}
                     onChange={(e) => setEditedProfile({ ...editedProfile, college: e.target.value })}
                     className="h-8 w-40"
+                    placeholder="College"
                   />
                 ) : (
-                  <span>{profile.college}</span>
+                  <span>{profile.college || 'Add college'}</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 {isEditing ? (
                   <Input
-                    value={editedProfile.year}
-                    onChange={(e) => setEditedProfile({ ...editedProfile, year: e.target.value })}
+                    value={editedProfile.graduation_year}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, graduation_year: e.target.value })}
                     className="h-8 w-40"
+                    placeholder="Graduation year"
                   />
                 ) : (
-                  <span>{profile.year}</span>
+                  <span>{profile.graduation_year || 'Add year'}</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
@@ -169,9 +264,10 @@ export function ProfileContent() {
                     value={editedProfile.location}
                     onChange={(e) => setEditedProfile({ ...editedProfile, location: e.target.value })}
                     className="h-8 w-40"
+                    placeholder="Location"
                   />
                 ) : (
-                  <span>{profile.location}</span>
+                  <span>{profile.location || 'Add location'}</span>
                 )}
               </div>
             </div>
@@ -185,8 +281,8 @@ export function ProfileContent() {
                   <Linkedin className="w-5 h-5 text-info" />
                   <Input
                     placeholder="LinkedIn URL"
-                    value={editedProfile.linkedinUrl}
-                    onChange={(e) => setEditedProfile({ ...editedProfile, linkedinUrl: e.target.value })}
+                    value={editedProfile.linkedin_url}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, linkedin_url: e.target.value })}
                     className="h-9"
                   />
                 </div>
@@ -194,33 +290,38 @@ export function ProfileContent() {
                   <Github className="w-5 h-5" />
                   <Input
                     placeholder="GitHub URL"
-                    value={editedProfile.githubUrl}
-                    onChange={(e) => setEditedProfile({ ...editedProfile, githubUrl: e.target.value })}
+                    value={editedProfile.github_url}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, github_url: e.target.value })}
                     className="h-9"
                   />
                 </div>
               </div>
             ) : (
               <>
-                {profile.linkedinUrl && (
+                {profile.linkedin_url && (
                   <a
-                    href={profile.linkedinUrl}
+                    href={profile.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center hover:bg-info/20 transition-colors"
+                    title="View LinkedIn Profile"
                   >
                     <Linkedin className="w-5 h-5" />
                   </a>
                 )}
-                {profile.githubUrl && (
+                {profile.github_url && (
                   <a
-                    href={profile.githubUrl}
+                    href={profile.github_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center hover:bg-foreground/20 transition-colors"
+                    title="View GitHub Profile"
                   >
                     <Github className="w-5 h-5" />
                   </a>
+                )}
+                {!profile.linkedin_url && !profile.github_url && (
+                  <p className="text-sm text-muted-foreground">Click edit to add social links</p>
                 )}
               </>
             )}
@@ -235,9 +336,12 @@ export function ProfileContent() {
               value={editedProfile.bio}
               onChange={(e) => setEditedProfile({ ...editedProfile, bio: e.target.value })}
               className="min-h-[100px]"
+              placeholder="Tell us about yourself..."
             />
           ) : (
-            <p className="text-muted-foreground">{profile.bio}</p>
+            <p className="text-muted-foreground">
+              {profile.bio || 'Add a bio to tell others about yourself'}
+            </p>
           )}
         </div>
       </motion.div>
@@ -249,7 +353,7 @@ export function ProfileContent() {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        {stats.map((stat, index) => (
+        {stats.map((stat) => (
           <div
             key={stat.label}
             className="p-5 rounded-2xl bg-card border border-border shadow-soft text-center"
@@ -273,18 +377,26 @@ export function ProfileContent() {
         <div className="p-6 rounded-2xl bg-card border border-border">
           <h3 className="font-semibold mb-4">Skills</h3>
           <div className="flex flex-wrap gap-2">
-            {profile.skills.map((skill) => (
-              <Badge key={skill} variant="secondary">{skill}</Badge>
-            ))}
+            {profile.skills.length > 0 ? (
+              profile.skills.map((skill) => (
+                <Badge key={skill} variant="secondary">{skill}</Badge>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No skills added yet</p>
+            )}
           </div>
         </div>
 
         <div className="p-6 rounded-2xl bg-card border border-border">
           <h3 className="font-semibold mb-4">Interests</h3>
           <div className="flex flex-wrap gap-2">
-            {profile.interests.map((interest) => (
-              <Badge key={interest} variant="outline">{interest}</Badge>
-            ))}
+            {profile.interests.length > 0 ? (
+              profile.interests.map((interest) => (
+                <Badge key={interest} variant="outline">{interest}</Badge>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No interests added yet</p>
+            )}
           </div>
         </div>
       </motion.div>

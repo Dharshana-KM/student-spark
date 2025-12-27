@@ -108,7 +108,7 @@ export default function Onboarding() {
         title: "Profile complete!",
         description: "Let's start your growth journey.",
       });
-      navigate("/dashboard");
+      navigate("/welcome");
     } catch (error: any) {
       toast({
         title: "Error",

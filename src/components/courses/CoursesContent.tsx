@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { 
   Play, 
   Clock, 
@@ -8,137 +9,66 @@ import {
   Star,
   Users,
   CheckCircle,
-  Circle
+  Circle,
+  GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-
-type CourseStatus = "not_started" | "in_progress" | "completed";
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  instructor: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
-  duration: string;
-  modules: number;
-  students: number;
-  rating: number;
-  thumbnail: string;
-  status: CourseStatus;
-  progress: number;
-  currentModule?: string;
-  category: string;
-}
-
-const courses: Course[] = [
-  {
-    id: "1",
-    title: "Introduction to Machine Learning",
-    description: "Learn the fundamentals of ML, from linear regression to neural networks.",
-    instructor: "Prof. Amit Kumar",
-    level: "Beginner",
-    duration: "8 weeks",
-    modules: 12,
-    students: 2340,
-    rating: 4.8,
-    thumbnail: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&h=300&fit=crop",
-    status: "in_progress",
-    progress: 45,
-    currentModule: "Module 3: Neural Networks",
-    category: "Tech"
-  },
-  {
-    id: "2",
-    title: "Web Development Bootcamp",
-    description: "Full-stack web development with HTML, CSS, JavaScript, React, and Node.js.",
-    instructor: "Sneha Reddy",
-    level: "Beginner",
-    duration: "12 weeks",
-    modules: 18,
-    students: 5600,
-    rating: 4.9,
-    thumbnail: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=300&fit=crop",
-    status: "in_progress",
-    progress: 22,
-    currentModule: "Module 2: CSS Flexbox",
-    category: "Tech"
-  },
-  {
-    id: "3",
-    title: "Data Structures & Algorithms",
-    description: "Master DSA concepts essential for coding interviews and problem-solving.",
-    instructor: "Vikram Singh",
-    level: "Intermediate",
-    duration: "10 weeks",
-    modules: 15,
-    students: 3200,
-    rating: 4.7,
-    thumbnail: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=400&h=300&fit=crop",
-    status: "not_started",
-    progress: 0,
-    category: "Tech"
-  },
-  {
-    id: "4",
-    title: "Product Management Fundamentals",
-    description: "Learn to build products users love — from ideation to launch.",
-    instructor: "Meera Iyer",
-    level: "Beginner",
-    duration: "6 weeks",
-    modules: 8,
-    students: 1890,
-    rating: 4.6,
-    thumbnail: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop",
-    status: "completed",
-    progress: 100,
-    category: "Business"
-  },
-  {
-    id: "5",
-    title: "Design Thinking Workshop",
-    description: "A hands-on approach to solving complex problems through design.",
-    instructor: "Arjun Das",
-    level: "Beginner",
-    duration: "4 weeks",
-    modules: 6,
-    students: 2100,
-    rating: 4.8,
-    thumbnail: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=400&h=300&fit=crop",
-    status: "not_started",
-    progress: 0,
-    category: "Design"
-  },
-  {
-    id: "6",
-    title: "Public Speaking for Students",
-    description: "Build confidence and master the art of impactful communication.",
-    instructor: "Kavya Nair",
-    level: "Beginner",
-    duration: "3 weeks",
-    modules: 5,
-    students: 980,
-    rating: 4.5,
-    thumbnail: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=300&fit=crop",
-    status: "not_started",
-    progress: 0,
-    category: "Skills"
-  },
-];
-
-const categories = ["All", "Tech", "Business", "Design", "Skills"];
-const statusFilters = ["All", "In Progress", "Not Started", "Completed"];
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { courses, categories, statusFilters, CourseStatus } from "./courseData";
 
 export function CoursesContent() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
+  const [userInterests, setUserInterests] = useState<string[]>([]);
+  const [userSkills, setUserSkills] = useState<string[]>([]);
 
-  const filteredCourses = courses.filter((course) => {
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("interests, skills")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setUserInterests(data.interests || []);
+        setUserSkills(data.skills || []);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
+
+  // Personalize courses based on user interests/skills
+  const getPersonalizedCourses = () => {
+    const userTags = [...userInterests, ...userSkills].map(t => t.toLowerCase());
+    
+    if (userTags.length === 0) return courses;
+
+    return [...courses].sort((a, b) => {
+      const aScore = a.tags.filter(tag => 
+        userTags.some(ut => tag.toLowerCase().includes(ut) || ut.includes(tag.toLowerCase()))
+      ).length;
+      const bScore = b.tags.filter(tag => 
+        userTags.some(ut => tag.toLowerCase().includes(ut) || ut.includes(tag.toLowerCase()))
+      ).length;
+      return bScore - aScore;
+    });
+  };
+
+  const personalizedCourses = getPersonalizedCourses();
+
+  const filteredCourses = personalizedCourses.filter((course) => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
@@ -183,7 +113,7 @@ export function CoursesContent() {
           Courses
         </h1>
         <p className="text-muted-foreground text-lg">
-          Skill-based learning designed for students who want to grow.
+          Learn from SWAYAM, NPTEL & IIT — official courses from Government of India.
         </p>
       </motion.div>
 
@@ -198,6 +128,19 @@ export function CoursesContent() {
           "Consistency beats intensity. Small steps daily lead to big changes."
         </p>
       </motion.div>
+
+      {/* Personalization Note */}
+      {userInterests.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+        >
+          <GraduationCap className="w-4 h-4" />
+          <span>Courses personalized based on your interests: {userInterests.slice(0, 3).join(", ")}{userInterests.length > 3 ? "..." : ""}</span>
+        </motion.div>
+      )}
 
       {/* Search and Filters */}
       <motion.div
@@ -268,13 +211,21 @@ export function CoursesContent() {
               >
                 {course.level}
               </Badge>
+              <Badge 
+                className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm text-foreground"
+              >
+                {course.source}
+              </Badge>
             </div>
 
             <div className="p-5 space-y-4">
               <div>
-                <h3 className="font-display font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+                <h3 className="font-display font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
                   {course.title}
                 </h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {course.instructor} • {course.institute}
+                </p>
                 <p className="text-muted-foreground text-sm line-clamp-2">
                   {course.description}
                 </p>
@@ -325,6 +276,7 @@ export function CoursesContent() {
               <Button 
                 variant={course.status === "not_started" ? "default" : "secondary"} 
                 className="w-full"
+                onClick={() => navigate(`/courses/${course.id}`)}
               >
                 {course.status === "not_started" ? "Start Course" : 
                  course.status === "completed" ? "Review Course" : "Continue"}
@@ -334,6 +286,16 @@ export function CoursesContent() {
           </motion.div>
         ))}
       </div>
+
+      {/* Source Attribution */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="text-center text-sm text-muted-foreground py-4"
+      >
+        📚 All courses are sourced from <strong>SWAYAM</strong>, <strong>NPTEL</strong> & <strong>IIT YouTube</strong> — Government of India Initiatives
+      </motion.div>
     </div>
   );
 }

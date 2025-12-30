@@ -12,6 +12,7 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Guidance from "./pages/Guidance";
 import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
 import Impact from "./pages/Impact";
 import Teams from "./pages/Teams";
 import Profile from "./pages/Profile";
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/guidance" element={<Guidance />} />
               <Route path="/guidance/:id" element={<PodcastDetail />} />
               <Route path="/courses" element={<Courses />} />
+              <Route path="/courses/:id" element={<CourseDetail />} />
               <Route path="/impact" element={<Impact />} />
               <Route path="/teams" element={<Teams />} />
               <Route path="/profile" element={<Profile />} />

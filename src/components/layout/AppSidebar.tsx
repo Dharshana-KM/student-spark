@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { LogoutDialog } from "./LogoutDialog";
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -100,7 +101,8 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarContent>
 
-        <div className="mt-auto p-4">
+        <div className="mt-auto p-4 space-y-2">
+          <LogoutDialog collapsed={collapsed} />
           <SidebarTrigger className="w-full justify-center" />
         </div>
       </Sidebar>

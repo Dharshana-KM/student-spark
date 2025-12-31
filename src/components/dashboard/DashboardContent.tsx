@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useCourseProgress } from "@/hooks/useCourseProgress";
 
 const motivationalQuotes = [
   { quote: "You're not late. Everyone starts somewhere.", author: "GrowthPath Community" },
@@ -64,24 +65,18 @@ const quickActions = [
   },
 ];
 
-const stats = [
-  { label: "Courses Started", value: 3, icon: BookOpen, color: "text-primary" },
-  { label: "Problems Solved", value: 5, icon: Rocket, color: "text-secondary" },
-  { label: "Team Members", value: 4, icon: Users, color: "text-success" },
-];
-
 const recommendedGuidance = [
   { 
     title: "The Power of Believing You Can Improve", 
     speaker: "Carol Dweck",
     duration: "10 min",
-    id: "1"
+    id: "2"
   },
   { 
-    title: "How to Find Work You Love", 
-    speaker: "Scott Dinsmore",
+    title: "How to Find Your Purpose", 
+    speaker: "Simon Sinek",
     duration: "18 min",
-    id: "2"
+    id: "1"
   },
 ];
 
@@ -94,6 +89,7 @@ export function DashboardContent() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { getStartedCoursesCount, getInProgressCourses, loading: coursesLoading } = useCourseProgress();
   const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
 
   useEffect(() => {
@@ -109,13 +105,13 @@ export function DashboardContent() {
         .from("profiles")
         .select("full_name, interests, skills, career_goal")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       
       if (data) {
         setProfile(data);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      // Silent fail - profile may not exist yet
     } finally {
       setLoading(false);
     }
@@ -135,6 +131,15 @@ export function DashboardContent() {
     return "evening";
   };
 
+  const coursesStarted = getStartedCoursesCount();
+  const inProgressCourses = getInProgressCourses();
+
+  const stats = [
+    { label: "Courses Started", value: coursesStarted, icon: BookOpen, color: "text-primary" },
+    { label: "Problems Solved", value: 0, icon: Rocket, color: "text-secondary" },
+    { label: "Team Members", value: 0, icon: Users, color: "text-success" },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pt-16 lg:pt-0">
       {/* Personalized Header */}
@@ -150,6 +155,9 @@ export function DashboardContent() {
           {profile?.career_goal 
             ? `Working towards: ${profile.career_goal}`
             : "Let's continue your growth journey today."}
+        </p>
+        <p className="text-sm text-muted-foreground mt-1 italic">
+          Created by students, for students.
         </p>
       </motion.div>
 
@@ -222,7 +230,9 @@ export function DashboardContent() {
               </div>
               <span className="text-muted-foreground text-sm">{stat.label}</span>
             </div>
-            <p className="text-3xl font-display font-bold">{stat.value}</p>
+            <p className="text-3xl font-display font-bold">
+              {coursesLoading && stat.label === "Courses Started" ? "..." : stat.value}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -284,39 +294,39 @@ export function DashboardContent() {
             </Button>
           </div>
 
-          <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-medium">Introduction to Machine Learning</span>
-                <span className="text-sm text-muted-foreground">45%</span>
-              </div>
-              <Progress value={45} className="h-2 mb-3" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Module 3: Neural Networks</span>
-                <Button size="sm" variant="secondary" asChild>
-                  <Link to="/courses">
-                    <Play className="w-4 h-4 mr-1" /> Continue
-                  </Link>
-                </Button>
-              </div>
+          {inProgressCourses.length === 0 ? (
+            <div className="text-center py-8">
+              <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">
+                No courses yet — start learning to see your progress here.
+              </p>
+              <Button asChild>
+                <Link to="/courses">Browse Courses</Link>
+              </Button>
             </div>
-
-            <div className="p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-medium">Web Development Bootcamp</span>
-                <span className="text-sm text-muted-foreground">22%</span>
-              </div>
-              <Progress value={22} className="h-2 mb-3" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Module 2: CSS Flexbox</span>
-                <Button size="sm" variant="secondary" asChild>
-                  <Link to="/courses">
-                    <Play className="w-4 h-4 mr-1" /> Continue
-                  </Link>
-                </Button>
-              </div>
+          ) : (
+            <div className="space-y-4">
+              {inProgressCourses.slice(0, 2).map((course) => (
+                <div key={course.id} className="p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-medium">Course in Progress</span>
+                    <span className="text-sm text-muted-foreground">{course.progress}%</span>
+                  </div>
+                  <Progress value={course.progress} className="h-2 mb-3" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {course.current_module || "Getting started"}
+                    </span>
+                    <Button size="sm" variant="secondary" asChild>
+                      <Link to={`/courses/${course.course_id}`}>
+                        <Play className="w-4 h-4 mr-1" /> Continue
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </motion.div>
       </div>
 

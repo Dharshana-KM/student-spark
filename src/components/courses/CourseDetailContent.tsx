@@ -7,19 +7,24 @@ import {
   ExternalLink,
   Play,
   CheckCircle,
-  Users,
   GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { courses } from "./courseData";
+import { useCourseProgress } from "@/hooks/useCourseProgress";
+import { toast } from "sonner";
 
 export function CourseDetailContent() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getCourseProgress, startCourse, updateProgress } = useCourseProgress();
   
   const course = courses.find(c => c.id === id);
+  const userProgress = id ? getCourseProgress(id) : undefined;
+  const progress = userProgress?.progress || 0;
+  const status = userProgress?.status || "not_started";
   
   if (!course) {
     return (
@@ -32,6 +37,32 @@ export function CourseDetailContent() {
       </div>
     );
   }
+
+  const handleStartCourse = async () => {
+    if (!id) return;
+    
+    const result = await startCourse(id);
+    if (result) {
+      toast.success("Course started! Good luck on your learning journey.");
+    }
+  };
+
+  const handleContinueLearning = async () => {
+    if (!id || !userProgress) {
+      await handleStartCourse();
+      return;
+    }
+    
+    // Simulate progress increase (in real app, this would be based on video progress)
+    const newProgress = Math.min(progress + 10, 100);
+    await updateProgress(id, newProgress, `Module ${Math.ceil(newProgress / (100 / course.modules))}`);
+    
+    if (newProgress >= 100) {
+      toast.success("Congratulations! You've completed this course! 🎉");
+    } else {
+      toast.success("Progress saved!");
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pt-16 lg:pt-0">
@@ -77,6 +108,10 @@ export function CourseDetailContent() {
         <p className="text-lg text-muted-foreground">
           {course.description}
         </p>
+
+        <p className="text-sm text-muted-foreground italic">
+          Created by students, for students.
+        </p>
       </motion.div>
 
       {/* Video Player */}
@@ -114,25 +149,24 @@ export function CourseDetailContent() {
               <BookOpen className="w-4 h-4 text-muted-foreground" />
               <span>{course.modules} modules</span>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <span>{course.students.toLocaleString()} enrolled</span>
-            </div>
           </div>
         </div>
 
         <div className="space-y-2 mb-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Your Progress</span>
-            <span className="text-sm text-muted-foreground">{course.progress}%</span>
+            <span className="text-sm text-muted-foreground">{progress}%</span>
           </div>
-          <Progress value={course.progress} className="h-3" />
+          <Progress value={progress} className="h-3" />
+          {userProgress?.current_module && (
+            <p className="text-xs text-muted-foreground">Currently on: {userProgress.current_module}</p>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button size="lg" className="flex-1">
+          <Button size="lg" className="flex-1" onClick={handleContinueLearning}>
             <Play className="w-4 h-4 mr-2" />
-            Continue Learning
+            {status === "not_started" ? "Start Course" : "Continue Learning"}
           </Button>
           {course.courseUrl && (
             <Button variant="outline" size="lg" asChild>

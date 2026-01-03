@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      impact_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impact_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "impact_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impact_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "impact_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      impact_posts: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -71,6 +143,138 @@ export type Database = {
         }
         Relationships: []
       }
+      team_join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          status: string | null
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_join_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          joined_at: string
+          role: string | null
+          skills: string[] | null
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          role?: string | null
+          skills?: string[] | null
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          role?: string | null
+          skills?: string[] | null
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_messages_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          interests: string[] | null
+          is_open: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          interests?: string[] | null
+          is_open?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          interests?: string[] | null
+          is_open?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_courses: {
         Row: {
           completed_at: string | null
@@ -109,6 +313,48 @@ export type Database = {
           started_at?: string
           status?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_hackathon_registrations: {
+        Row: {
+          hackathon_id: string
+          id: string
+          registered_at: string
+          user_id: string
+        }
+        Insert: {
+          hackathon_id: string
+          id?: string
+          registered_at?: string
+          user_id: string
+        }
+        Update: {
+          hackathon_id?: string
+          id?: string
+          registered_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_problem_joins: {
+        Row: {
+          id: string
+          joined_at: string
+          problem_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          problem_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          problem_id?: string
           user_id?: string
         }
         Relationships: []

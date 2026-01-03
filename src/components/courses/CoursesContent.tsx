@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Play, 
   Clock, 
-  BookOpen, 
+  Video, 
   Search,
   ChevronRight,
   GraduationCap,
@@ -131,10 +131,7 @@ export function CoursesContent() {
           Courses
         </h1>
         <p className="text-muted-foreground text-lg">
-          Learn from SWAYAM, NPTEL & IIT — official courses from Government of India.
-        </p>
-        <p className="text-sm text-muted-foreground mt-1 italic">
-          Created by students, for students.
+          Quality courses from top YouTube educators. Learn at your own pace.
         </p>
       </motion.div>
 
@@ -146,7 +143,7 @@ export function CoursesContent() {
         className="p-4 rounded-xl bg-card border border-border"
       >
         <div className="flex items-center gap-3">
-          <BookOpen className="w-5 h-5 text-primary" />
+          <GraduationCap className="w-5 h-5 text-primary" />
           <span className="font-medium">Your Progress:</span>
           <span className="text-muted-foreground">
             {progressLoading ? "Loading..." : `${coursesCount} course${coursesCount !== 1 ? 's' : ''} started`}
@@ -198,7 +195,7 @@ export function CoursesContent() {
         
         <div className="flex flex-wrap gap-2">
           <div className="flex gap-2 flex-wrap">
-            {categories.map((cat) => (
+            {categories.slice(0, 8).map((cat) => (
               <Button
                 key={cat}
                 variant={selectedCategory === cat ? "default" : "outline"}
@@ -208,40 +205,62 @@ export function CoursesContent() {
                 {cat}
               </Button>
             ))}
-          </div>
-          <div className="w-px bg-border mx-2 hidden sm:block" />
-          <div className="flex gap-2 flex-wrap">
-            {statusFilters.map((status) => (
-              <Button
-                key={status}
-                variant={selectedStatus === status ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => setSelectedStatus(status)}
-              >
-                {status}
+            {selectedCategory !== "All" && !categories.slice(0, 8).includes(selectedCategory) && (
+              <Button variant="default" size="sm">
+                {selectedCategory}
               </Button>
-            ))}
+            )}
           </div>
+        </div>
+        
+        <div className="flex gap-2 flex-wrap">
+          {categories.slice(8).map((cat) => (
+            <Button
+              key={cat}
+              variant={selectedCategory === cat ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedCategory(cat)}
+            >
+              {cat}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex gap-2 flex-wrap pt-2 border-t border-border">
+          {statusFilters.map((status) => (
+            <Button
+              key={status}
+              variant={selectedStatus === status ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedStatus(status)}
+            >
+              {status}
+            </Button>
+          ))}
         </div>
       </motion.div>
 
       {/* Empty State */}
-      {filteredCourses.length === 0 && selectedStatus !== "All" && (
+      {filteredCourses.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-12"
         >
-          <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
+          <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No courses found</h3>
           <p className="text-muted-foreground">
-            Start learning to see your progress here.
+            Try adjusting your filters or search query.
           </p>
           <Button 
             className="mt-4"
-            onClick={() => setSelectedStatus("All")}
+            onClick={() => {
+              setSelectedCategory("All");
+              setSelectedStatus("All");
+              setSearchQuery("");
+            }}
           >
-            Browse All Courses
+            Clear Filters
           </Button>
         </motion.div>
       )}
@@ -273,11 +292,6 @@ export function CoursesContent() {
                 >
                   {course.level}
                 </Badge>
-                <Badge 
-                  className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm text-foreground"
-                >
-                  {course.source}
-                </Badge>
               </div>
 
               <div className="p-5 space-y-4">
@@ -285,9 +299,6 @@ export function CoursesContent() {
                   <h3 className="font-display font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
                     {course.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {course.instructor} • {course.institute}
-                  </p>
                   <p className="text-muted-foreground text-sm line-clamp-2">
                     {course.description}
                   </p>
@@ -295,12 +306,12 @@ export function CoursesContent() {
 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {course.duration}
+                    <Video className="w-4 h-4" />
+                    {course.videoCount} videos
                   </div>
                   <div className="flex items-center gap-1">
-                    <BookOpen className="w-4 h-4" />
-                    {course.modules} modules
+                    <Clock className="w-4 h-4" />
+                    {course.estimatedHours}h
                   </div>
                 </div>
 
@@ -335,14 +346,14 @@ export function CoursesContent() {
         })}
       </div>
 
-      {/* Source Attribution */}
+      {/* Footer */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
         className="text-center text-sm text-muted-foreground py-4"
       >
-        📚 All courses are sourced from <strong>SWAYAM</strong>, <strong>NPTEL</strong> & <strong>IIT YouTube</strong> — Government of India Initiatives
+        📚 Quality content from YouTube's best educators • Created by the Students
       </motion.div>
     </div>
   );

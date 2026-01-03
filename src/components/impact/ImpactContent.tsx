@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -304,6 +304,11 @@ export function ImpactContent() {
   const [joinedProblems, setJoinedProblems] = useState<string[]>([]);
   const [joinedHackathons, setJoinedHackathons] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("problems");
+  const [logoErrors, setLogoErrors] = useState<Record<string, boolean>>({});
+
+  const handleLogoError = useCallback((id: string) => {
+    setLogoErrors(prev => ({ ...prev, [id]: true }));
+  }, []);
 
   const handleJoinProblem = (problemId: string, ngoName: string) => {
     setJoinedProblems([...joinedProblems, problemId]);
@@ -471,15 +476,18 @@ export function ImpactContent() {
                 <div className="flex flex-col lg:flex-row lg:items-start gap-4">
                   {/* NGO Logo */}
                   <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                    <img 
-                      src={problem.ngoLogo} 
-                      alt={problem.ngoName}
-                      className="w-12 h-12 object-contain"
-                      onError={(e) => {
-                        e.currentTarget.src = '';
-                        e.currentTarget.parentElement!.innerHTML = `<span class="text-2xl font-bold text-muted-foreground">${problem.ngoName[0]}</span>`;
-                      }}
-                    />
+                    {logoErrors[problem.id] ? (
+                      <span className="text-2xl font-bold text-muted-foreground">
+                        {problem.ngoName.charAt(0)}
+                      </span>
+                    ) : (
+                      <img 
+                        src={problem.ngoLogo} 
+                        alt={problem.ngoName}
+                        className="w-12 h-12 object-contain"
+                        onError={() => handleLogoError(problem.id)}
+                      />
+                    )}
                   </div>
                   
                   <div className="flex-1 space-y-3">
@@ -560,15 +568,18 @@ export function ImpactContent() {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                      <img 
-                        src={hackathon.collegeLogo} 
-                        alt={hackathon.college}
-                        className="w-10 h-10 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = '';
-                          e.currentTarget.parentElement!.innerHTML = `<span class="text-lg font-bold text-muted-foreground">${hackathon.college.split(' ').map(w => w[0]).join('')}</span>`;
-                        }}
-                      />
+                      {logoErrors[hackathon.id] ? (
+                        <span className="text-lg font-bold text-muted-foreground">
+                          {hackathon.college.split(' ').map(w => w.charAt(0)).join('')}
+                        </span>
+                      ) : (
+                        <img 
+                          src={hackathon.collegeLogo} 
+                          alt={hackathon.college}
+                          className="w-10 h-10 object-contain"
+                          onError={() => handleLogoError(hackathon.id)}
+                        />
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Badge variant={hackathon.mode === "Online" ? "secondary" : hackathon.mode === "Offline" ? "default" : "outline"}>

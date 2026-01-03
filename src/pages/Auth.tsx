@@ -8,9 +8,14 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Rocket, Mail, Lock, User, ArrowRight, Sparkles } from "lucide-react";
 import { z } from "zod";
+import { getSafeAuthErrorMessage } from "@/lib/errorMessages";
 
 const emailSchema = z.string().email("Please enter a valid email");
-const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+const passwordSchema = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[a-z]/, "Password must contain a lowercase letter")
+  .regex(/[A-Z]/, "Password must contain an uppercase letter")
+  .regex(/[0-9]/, "Password must contain a number");
 const nameSchema = z.string().min(2, "Name must be at least 2 characters");
 
 export default function Auth() {
@@ -119,10 +124,10 @@ export default function Auth() {
           description: "Let's set up your profile.",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: getSafeAuthErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -140,7 +145,7 @@ export default function Auth() {
     if (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: getSafeAuthErrorMessage(error),
         variant: "destructive",
       });
     }

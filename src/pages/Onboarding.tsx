@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { getSafeProfileErrorMessage } from "@/lib/errorMessages";
 import { 
   Rocket, 
   ArrowRight, 
@@ -109,10 +110,10 @@ export default function Onboarding() {
         description: "Let's start your growth journey.",
       });
       navigate("/welcome");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: getSafeProfileErrorMessage(error),
         variant: "destructive",
       });
     } finally {

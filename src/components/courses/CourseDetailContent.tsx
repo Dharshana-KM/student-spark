@@ -3,11 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
   Clock, 
-  BookOpen, 
-  ExternalLink,
+  Video,
   Play,
-  CheckCircle,
-  GraduationCap
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -53,9 +51,9 @@ export function CourseDetailContent() {
       return;
     }
     
-    // Simulate progress increase (in real app, this would be based on video progress)
+    // Simulate progress increase
     const newProgress = Math.min(progress + 10, 100);
-    await updateProgress(id, newProgress, `Module ${Math.ceil(newProgress / (100 / course.modules))}`);
+    await updateProgress(id, newProgress);
     
     if (newProgress >= 100) {
       toast.success("Congratulations! You've completed this course! 🎉");
@@ -87,31 +85,26 @@ export function CourseDetailContent() {
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary">{course.category}</Badge>
           <Badge variant="outline">{course.level}</Badge>
-          <Badge className="bg-primary/20 text-primary border-primary/30">
-            {course.source}
-          </Badge>
         </div>
         
         <h1 className="text-3xl lg:text-4xl font-display font-bold">
           {course.title}
         </h1>
-        
-        <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="w-5 h-5" />
-            <span>{course.instructor}</span>
-          </div>
-          <span>•</span>
-          <span>{course.institute}</span>
-        </div>
 
         <p className="text-lg text-muted-foreground">
           {course.description}
         </p>
 
-        <p className="text-sm text-muted-foreground italic">
-          Created by students, for students.
-        </p>
+        <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Video className="w-5 h-5" />
+            <span>{course.videoCount} videos</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            <span>{course.estimatedHours} hours</span>
+          </div>
+        </div>
       </motion.div>
 
       {/* Video Player */}
@@ -123,7 +116,7 @@ export function CourseDetailContent() {
       >
         <div className="aspect-video">
           <iframe
-            src={`https://www.youtube.com/embed/${course.youtubeId}`}
+            src={`https://www.youtube.com/embed/${course.youtubeId}?rel=0&modestbranding=1`}
             title={course.title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -139,100 +132,46 @@ export function CourseDetailContent() {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="p-6 rounded-2xl bg-card border border-border"
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span>{course.duration}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <BookOpen className="w-4 h-4 text-muted-foreground" />
-              <span>{course.modules} modules</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2 mb-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Your Progress</span>
             <span className="text-sm text-muted-foreground">{progress}%</span>
           </div>
           <Progress value={progress} className="h-3" />
-          {userProgress?.current_module && (
-            <p className="text-xs text-muted-foreground">Currently on: {userProgress.current_module}</p>
-          )}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button size="lg" className="flex-1" onClick={handleContinueLearning}>
+          
+          <Button size="lg" className="w-full" onClick={handleContinueLearning}>
             <Play className="w-4 h-4 mr-2" />
             {status === "not_started" ? "Start Course" : "Continue Learning"}
           </Button>
-          {course.courseUrl && (
-            <Button variant="outline" size="lg" asChild>
-              <a href={course.courseUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View on {course.source}
-              </a>
-            </Button>
-          )}
         </div>
       </motion.div>
 
-      {/* Course Details */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="p-6 rounded-2xl bg-card border border-border"
-        >
-          <h2 className="text-xl font-display font-semibold mb-4">Course Overview</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            {course.overview}
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="p-6 rounded-2xl bg-card border border-border"
-        >
-          <h2 className="text-xl font-display font-semibold mb-4">Why This Course Matters</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            {course.whyItMatters}
-          </p>
-        </motion.div>
-      </div>
-
+      {/* What You'll Learn */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
         className="p-6 rounded-2xl bg-card border border-border"
       >
-        <h2 className="text-xl font-display font-semibold mb-4">Who Should Take This Course</h2>
-        <ul className="space-y-3">
-          {course.whoShouldTake.map((item, index) => (
-            <li key={index} className="flex items-start gap-3">
+        <h2 className="text-xl font-display font-semibold mb-4">What You'll Learn</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {course.tags.map((tag, index) => (
+            <div key={index} className="flex items-start gap-3">
               <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-              <span className="text-muted-foreground">{item}</span>
-            </li>
+              <span className="text-muted-foreground">{tag}</span>
+            </div>
           ))}
-        </ul>
+        </div>
       </motion.div>
 
-      {/* Source Attribution */}
+      {/* Footer */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="p-4 rounded-xl bg-primary/10 border border-primary/20 text-center"
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="text-center text-sm text-muted-foreground py-4"
       >
-        <p className="text-sm text-primary font-medium">
-          📚 This course is sourced from <strong>{course.source}</strong> – {course.institute} • Government of India Initiative
-        </p>
+        Created by the Students
       </motion.div>
     </div>
   );

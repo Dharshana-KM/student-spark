@@ -260,10 +260,10 @@ export function Footer() {
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-display font-bold text-lg">GrowthPath</span>
+            <span className="font-display font-bold text-lg">Grow Together, Build Together</span>
           </div>
           <p className="text-muted-foreground text-sm">
-            Created by students. For students. © 2024
+            Created by the Students
           </p>
           <div className="flex gap-6">
             <Link to="/guidance" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Guidance</Link>

@@ -3,11 +3,8 @@ import {
   Users, 
   Search, 
   Plus, 
-  Rocket, 
   MessageCircle,
-  User,
   Star,
-  ChevronRight,
   Trophy,
   Target,
   Sparkles,
@@ -23,285 +20,321 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-interface TeamMember {
-  id: string;
-  name: string;
-  avatar: string;
-  role: string;
-  skills: string[];
-  linkedinUrl?: string;
-}
-
-interface ChatMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  message: string;
-  timestamp: Date;
-}
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Team {
   id: string;
   name: string;
-  description: string;
-  members: TeamMember[];
+  description: string | null;
   interests: string[];
-  currentProject?: string;
-  projectType?: "hackathon" | "problem";
-  progress: number;
-  isOpen: boolean;
-  messages: ChatMessage[];
+  is_open: boolean;
+  created_by: string;
+  created_at: string;
+  members?: TeamMember[];
 }
 
-interface StudentMatch {
+interface TeamMember {
   id: string;
-  name: string;
-  avatar: string;
-  college: string;
-  year: string;
-  interests: string[];
+  user_id: string;
+  role: string;
   skills: string[];
-  matchScore: number;
-  linkedinUrl: string;
-  isConnected: boolean;
+  profile?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
 }
 
-const myTeams: Team[] = [
-  {
-    id: "t1",
-    name: "Team EcoTech",
-    description: "Working on sustainable technology solutions for rural India",
-    members: [
-      { id: "m1", name: "You", avatar: "", role: "Full Stack Developer", skills: ["React", "Python", "Node.js"], linkedinUrl: "https://linkedin.com/in/student" },
-      { id: "m2", name: "Priya Sharma", avatar: "", role: "UI/UX Designer", skills: ["Figma", "Adobe XD"], linkedinUrl: "https://linkedin.com/in/priya-sharma" },
-      { id: "m3", name: "Rahul Verma", avatar: "", role: "ML Engineer", skills: ["TensorFlow", "Python"], linkedinUrl: "https://linkedin.com/in/rahul-verma" },
-      { id: "m4", name: "Ananya Reddy", avatar: "", role: "Backend Developer", skills: ["Node.js", "MongoDB"], linkedinUrl: "https://linkedin.com/in/ananya-reddy" },
-    ],
-    interests: ["Environment", "IoT", "Sustainability"],
-    currentProject: "WWF India - Wildlife Conservation Alert System",
-    projectType: "problem",
-    progress: 45,
-    isOpen: false,
-    messages: [
-      { id: "msg1", senderId: "m2", senderName: "Priya Sharma", message: "Hey team! I've completed the wireframes for the dashboard.", timestamp: new Date(Date.now() - 3600000) },
-      { id: "msg2", senderId: "m3", senderName: "Rahul Verma", message: "Great work! The ML model is 70% done. Should be ready by weekend.", timestamp: new Date(Date.now() - 1800000) },
-      { id: "msg3", senderId: "m4", senderName: "Ananya Reddy", message: "API endpoints are ready for integration. Let's sync tomorrow.", timestamp: new Date(Date.now() - 900000) },
-    ],
-  },
-];
-
-const openTeams: Team[] = [
-  {
-    id: "t2",
-    name: "Digital Literacy Squad",
-    description: "Building offline-capable learning apps for rural schools with Pratham",
-    members: [
-      { id: "m5", name: "Vikram Mehta", avatar: "", role: "Project Lead", skills: ["React Native", "Node.js"], linkedinUrl: "https://linkedin.com/in/vikram-mehta" },
-      { id: "m6", name: "Sneha Patel", avatar: "", role: "UX Researcher", skills: ["User Research", "Figma"], linkedinUrl: "https://linkedin.com/in/sneha-patel" },
-    ],
-    interests: ["Education", "Mobile", "Social Impact"],
-    currentProject: "Pratham - Digital Literacy App",
-    projectType: "problem",
-    progress: 20,
-    isOpen: true,
-    messages: [],
-  },
-  {
-    id: "t3",
-    name: "HealthTech Innovators",
-    description: "Creating AI-powered nutrition tracking for Akshaya Patra",
-    members: [
-      { id: "m7", name: "Arjun Das", avatar: "", role: "ML Engineer", skills: ["Python", "TensorFlow", "Computer Vision"], linkedinUrl: "https://linkedin.com/in/arjun-das" },
-    ],
-    interests: ["Healthcare", "AI", "Nutrition"],
-    currentProject: "Akshaya Patra - Child Nutrition System",
-    projectType: "problem",
-    isOpen: true,
-    progress: 0,
-    messages: [],
-  },
-  {
-    id: "t4",
-    name: "Smart Campus Builders",
-    description: "IoT solutions for smart cities - preparing for IIT Bombay Techfest",
-    members: [
-      { id: "m8", name: "Kavya Nair", avatar: "", role: "Hardware Lead", skills: ["Arduino", "IoT", "Embedded C"], linkedinUrl: "https://linkedin.com/in/kavya-nair" },
-      { id: "m9", name: "Rohan Singh", avatar: "", role: "Cloud Engineer", skills: ["AWS", "Python", "Docker"], linkedinUrl: "https://linkedin.com/in/rohan-singh" },
-      { id: "m10", name: "Meera Iyer", avatar: "", role: "Product Manager", skills: ["Agile", "Strategy"], linkedinUrl: "https://linkedin.com/in/meera-iyer" },
-    ],
-    interests: ["IoT", "Smart Cities", "Cloud"],
-    currentProject: "IIT Bombay Techfest - AI Challenge",
-    projectType: "hackathon",
-    progress: 15,
-    isOpen: true,
-    messages: [],
-  },
-  {
-    id: "t5",
-    name: "FinTech Pioneers",
-    description: "Building blockchain solutions for BITS Pilani APOGEE Buildathon",
-    members: [
-      { id: "m11", name: "Aditya Rao", avatar: "", role: "Blockchain Dev", skills: ["Solidity", "Web3", "React"], linkedinUrl: "https://linkedin.com/in/aditya-rao" },
-    ],
-    interests: ["Blockchain", "FinTech", "DeFi"],
-    currentProject: "BITS Pilani - APOGEE Buildathon",
-    projectType: "hackathon",
-    isOpen: true,
-    progress: 0,
-    messages: [],
-  },
-];
-
-// Realistic student profiles with LinkedIn links
-const studentMatches: StudentMatch[] = [
-  {
-    id: "s1",
-    name: "Aditya Kumar",
-    avatar: "",
-    college: "IIT Bombay",
-    year: "3rd Year CSE",
-    interests: ["Machine Learning", "Web Development"],
-    skills: ["Python", "React", "TensorFlow"],
-    matchScore: 92,
-    linkedinUrl: "https://linkedin.com/in/aditya-kumar-iitb",
-    isConnected: false,
-  },
-  {
-    id: "s2",
-    name: "Shreya Sharma",
-    avatar: "",
-    college: "NIT Trichy",
-    year: "4th Year ECE",
-    interests: ["Data Science", "Healthcare Tech"],
-    skills: ["Python", "SQL", "Tableau"],
-    matchScore: 88,
-    linkedinUrl: "https://linkedin.com/in/shreya-sharma-nitt",
-    isConnected: false,
-  },
-  {
-    id: "s3",
-    name: "Karthik Reddy",
-    avatar: "",
-    college: "BITS Pilani",
-    year: "2nd Year CS",
-    interests: ["Mobile Development", "UI/UX"],
-    skills: ["React Native", "Figma", "JavaScript"],
-    matchScore: 85,
-    linkedinUrl: "https://linkedin.com/in/karthik-reddy-bits",
-    isConnected: false,
-  },
-  {
-    id: "s4",
-    name: "Neha Gupta",
-    avatar: "",
-    college: "IIT Delhi",
-    year: "3rd Year CSE",
-    interests: ["Cloud Computing", "DevOps"],
-    skills: ["AWS", "Docker", "Kubernetes"],
-    matchScore: 82,
-    linkedinUrl: "https://linkedin.com/in/neha-gupta-iitd",
-    isConnected: false,
-  },
-  {
-    id: "s5",
-    name: "Arjun Menon",
-    avatar: "",
-    college: "VIT Vellore",
-    year: "4th Year IT",
-    interests: ["Blockchain", "FinTech"],
-    skills: ["Solidity", "Node.js", "MongoDB"],
-    matchScore: 79,
-    linkedinUrl: "https://linkedin.com/in/arjun-menon-vit",
-    isConnected: false,
-  },
-  {
-    id: "s6",
-    name: "Divya Krishnan",
-    avatar: "",
-    college: "Anna University",
-    year: "3rd Year CSE",
-    interests: ["AI Research", "NLP"],
-    skills: ["PyTorch", "Hugging Face", "Python"],
-    matchScore: 76,
-    linkedinUrl: "https://linkedin.com/in/divya-krishnan-au",
-    isConnected: false,
-  },
-];
+interface TeamMessage {
+  id: string;
+  team_id: string;
+  user_id: string;
+  message: string;
+  created_at: string;
+  profile?: {
+    full_name: string;
+  };
+}
 
 const interestTags = ["All", "Tech", "Environment", "Healthcare", "Education", "Design", "AI/ML", "IoT"];
 
 export function TeamsContent() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedInterest, setSelectedInterest] = useState("All");
+  const [myTeams, setMyTeams] = useState<Team[]>([]);
+  const [openTeams, setOpenTeams] = useState<Team[]>([]);
   const [pendingRequests, setPendingRequests] = useState<string[]>([]);
-  const [connectedStudents, setConnectedStudents] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Create team dialog
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamDescription, setNewTeamDescription] = useState("");
+  const [newTeamInterests, setNewTeamInterests] = useState<string[]>([]);
+  
+  // Chat
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [teamMessages, setTeamMessages] = useState<TeamMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [teamMessages, setTeamMessages] = useState<Record<string, ChatMessage[]>>({
-    "t1": myTeams[0].messages,
-  });
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const filteredOpenTeams = openTeams.filter((team) => {
-    const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      team.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesInterest = selectedInterest === "All" || 
-      team.interests.some(i => i.toLowerCase().includes(selectedInterest.toLowerCase()));
-    return matchesSearch && matchesInterest;
-  });
+  // Fetch teams
+  useEffect(() => {
+    fetchTeams();
+    if (user) {
+      fetchPendingRequests();
+    }
+  }, [user]);
 
-  const handleRequestToJoin = (teamId: string, teamName: string) => {
+  const fetchTeams = async () => {
+    setLoading(true);
+    try {
+      // Fetch all teams
+      const { data: allTeams } = await supabase
+        .from("teams")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (allTeams && user) {
+        // Fetch user's team memberships
+        const { data: memberships } = await supabase
+          .from("team_members")
+          .select("team_id")
+          .eq("user_id", user.id);
+
+        const memberTeamIds = memberships?.map(m => m.team_id) || [];
+        
+        // Also include teams the user created
+        const myTeamsList = allTeams.filter(t => 
+          memberTeamIds.includes(t.id) || t.created_by === user.id
+        );
+        const openTeamsList = allTeams.filter(t => 
+          t.is_open && !memberTeamIds.includes(t.id) && t.created_by !== user.id
+        );
+
+        setMyTeams(myTeamsList);
+        setOpenTeams(openTeamsList);
+      } else if (allTeams) {
+        setOpenTeams(allTeams.filter(t => t.is_open));
+      }
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPendingRequests = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("team_join_requests")
+      .select("team_id")
+      .eq("user_id", user.id)
+      .eq("status", "pending");
+    
+    setPendingRequests(data?.map(r => r.team_id) || []);
+  };
+
+  const fetchTeamMessages = async (teamId: string) => {
+    const { data } = await supabase
+      .from("team_messages")
+      .select("*")
+      .eq("team_id", teamId)
+      .order("created_at", { ascending: true });
+    
+    if (data) {
+      // Fetch profile names for messages
+      const userIds = [...new Set(data.map(m => m.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      
+      const messagesWithProfiles = data.map(m => ({
+        ...m,
+        profile: profileMap.get(m.user_id)
+      }));
+      
+      setTeamMessages(messagesWithProfiles);
+    }
+  };
+
+  // Subscribe to real-time messages
+  useEffect(() => {
+    if (!selectedTeam) return;
+
+    const channel = supabase
+      .channel(`team-messages-${selectedTeam.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "team_messages",
+          filter: `team_id=eq.${selectedTeam.id}`
+        },
+        async (payload) => {
+          const newMsg = payload.new as TeamMessage;
+          // Fetch the profile for this message
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id, full_name")
+            .eq("user_id", newMsg.user_id)
+            .maybeSingle();
+          
+          setTeamMessages(prev => [...prev, { ...newMsg, profile: profile || undefined }]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedTeam]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [teamMessages]);
+
+  const handleCreateTeam = async () => {
+    if (!user || !newTeamName.trim()) return;
+
+    const { data: team, error } = await supabase
+      .from("teams")
+      .insert({
+        name: newTeamName.trim(),
+        description: newTeamDescription.trim() || null,
+        interests: newTeamInterests,
+        created_by: user.id,
+        is_open: true
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create team. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Add creator as a member
+    await supabase.from("team_members").insert({
+      team_id: team.id,
+      user_id: user.id,
+      role: "leader"
+    });
+
+    toast({
+      title: "🎉 Team Created!",
+      description: `"${team.name}" is ready. Invite members and start building!`
+    });
+
+    setCreateDialogOpen(false);
+    setNewTeamName("");
+    setNewTeamDescription("");
+    setNewTeamInterests([]);
+    fetchTeams();
+  };
+
+  const handleRequestToJoin = async (teamId: string, teamName: string) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to request to join a team.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const { error } = await supabase.from("team_join_requests").insert({
+      team_id: teamId,
+      user_id: user.id,
+      status: "pending"
+    });
+
+    if (error) {
+      if (error.code === "23505") {
+        toast({
+          title: "Already requested",
+          description: "You've already sent a request to join this team."
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to send request. Please try again.",
+          variant: "destructive"
+        });
+      }
+      return;
+    }
+
     setPendingRequests([...pendingRequests, teamId]);
     toast({
       title: "📤 Request Sent!",
-      description: `Your request to join "${teamName}" has been sent to the team leader.`,
-    });
-  };
-
-  const handleConnectStudent = (studentId: string, studentName: string) => {
-    setConnectedStudents([...connectedStudents, studentId]);
-    toast({
-      title: "🤝 Connection Request Sent!",
-      description: `Your connection request to ${studentName} has been sent.`,
+      description: `Your request to join "${teamName}" has been sent to the team leader.`
     });
   };
 
   const openTeamChat = (team: Team) => {
     setSelectedTeam(team);
     setChatOpen(true);
+    fetchTeamMessages(team.id);
   };
 
-  const sendMessage = () => {
-    if (!newMessage.trim() || !selectedTeam) return;
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedTeam || !user) return;
 
-    const message: ChatMessage = {
-      id: `msg_${Date.now()}`,
-      senderId: "m1",
-      senderName: "You",
-      message: newMessage.trim(),
-      timestamp: new Date(),
-    };
+    const { error } = await supabase.from("team_messages").insert({
+      team_id: selectedTeam.id,
+      user_id: user.id,
+      message: newMessage.trim()
+    });
 
-    setTeamMessages(prev => ({
-      ...prev,
-      [selectedTeam.id]: [...(prev[selectedTeam.id] || []), message],
-    }));
-    setNewMessage("");
+    if (!error) {
+      setNewMessage("");
+    }
   };
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [teamMessages, selectedTeam]);
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const filteredOpenTeams = openTeams.filter((team) => {
+    const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (team.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    const matchesInterest = selectedInterest === "All" || 
+      team.interests.some(i => i.toLowerCase().includes(selectedInterest.toLowerCase()));
+    return matchesSearch && matchesInterest;
+  });
+
+  const toggleInterest = (interest: string) => {
+    if (newTeamInterests.includes(interest)) {
+      setNewTeamInterests(newTeamInterests.filter(i => i !== interest));
+    } else {
+      setNewTeamInterests([...newTeamInterests, interest]);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto pt-16 lg:pt-0 flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pt-16 lg:pt-0">
@@ -319,15 +352,72 @@ export function TeamsContent() {
           <p className="text-muted-foreground text-lg">
             Find your tribe. Build together. Grow together.
           </p>
-          <p className="text-sm text-muted-foreground mt-1 italic">
-            Created by students, for students.
-          </p>
         </div>
-        <Button variant="hero">
-          <Plus className="w-4 h-4 mr-2" />
-          Create Team
-        </Button>
+        
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="hero" disabled={!user}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Team
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create a New Team</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div>
+                <Label htmlFor="team-name">Team Name</Label>
+                <Input
+                  id="team-name"
+                  placeholder="e.g., EcoTech Builders"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="team-desc">Description</Label>
+                <Textarea
+                  id="team-desc"
+                  placeholder="What will your team build?"
+                  value={newTeamDescription}
+                  onChange={(e) => setNewTeamDescription(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Interests</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {interestTags.filter(t => t !== "All").map((interest) => (
+                    <Badge
+                      key={interest}
+                      variant={newTeamInterests.includes(interest) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => toggleInterest(interest)}
+                    >
+                      {interest}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <Button className="w-full" onClick={handleCreateTeam} disabled={!newTeamName.trim()}>
+                Create Team
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
+
+      {!user && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-xl bg-warning/10 border border-warning/20"
+        >
+          <p className="text-center text-warning-foreground">
+            Sign in to create teams, join others, and collaborate with students.
+          </p>
+        </motion.div>
+      )}
 
       {/* Pending Requests Summary */}
       {pendingRequests.length > 0 && (
@@ -358,19 +448,15 @@ export function TeamsContent() {
         </p>
       </motion.div>
 
-      <Tabs defaultValue="my-teams" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+      <Tabs defaultValue={myTeams.length > 0 ? "my-teams" : "discover"} className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="my-teams">
             <Users className="w-4 h-4 mr-2" />
-            My Teams
+            My Teams ({myTeams.length})
           </TabsTrigger>
           <TabsTrigger value="discover">
             <Search className="w-4 h-4 mr-2" />
             Discover
-          </TabsTrigger>
-          <TabsTrigger value="matches">
-            <Sparkles className="w-4 h-4 mr-2" />
-            Matches
           </TabsTrigger>
         </TabsList>
 
@@ -385,7 +471,9 @@ export function TeamsContent() {
               <Users className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
               <h3 className="text-xl font-semibold mb-2">No Teams Yet</h3>
               <p className="text-muted-foreground mb-4">Create a team or join one to get started!</p>
-              <Button>Create Your First Team</Button>
+              <Button onClick={() => setCreateDialogOpen(true)} disabled={!user}>
+                Create Your First Team
+              </Button>
             </motion.div>
           ) : (
             myTeams.map((team, index) => (
@@ -401,129 +489,89 @@ export function TeamsContent() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-xl font-display font-semibold">{team.name}</h3>
-                        <p className="text-muted-foreground text-sm">{team.description}</p>
+                        <p className="text-muted-foreground text-sm">{team.description || "No description"}</p>
                       </div>
-                      <Badge variant="outline" className="shrink-0">
-                        {team.members.length} members
-                      </Badge>
+                      {team.created_by === user?.id && (
+                        <Badge variant="secondary">Leader</Badge>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       {team.interests.map((interest) => (
-                        <Badge key={interest} variant="secondary">{interest}</Badge>
+                        <Badge key={interest} variant="outline">{interest}</Badge>
                       ))}
-                    </div>
-
-                    {team.currentProject && (
-                      <div className="p-4 rounded-xl bg-muted/50">
-                        <div className="flex items-center gap-2 mb-3">
-                          {team.projectType === "hackathon" ? (
-                            <Trophy className="w-5 h-5 text-accent" />
-                          ) : (
-                            <Target className="w-5 h-5 text-secondary" />
-                          )}
-                          <span className="font-medium">Current Project</span>
-                        </div>
-                        <p className="text-sm mb-3">{team.currentProject}</p>
-                        <div className="flex items-center gap-3">
-                          <Progress value={team.progress} className="h-2 flex-1" />
-                          <span className="text-sm text-muted-foreground">{team.progress}%</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Team Members */}
-                    <div>
-                      <p className="text-sm font-medium mb-3">Team Members</p>
-                      <div className="flex flex-wrap gap-4">
-                        {team.members.map((member) => (
-                          <div key={member.id} className="flex items-center gap-2">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage src={member.avatar} />
-                              <AvatarFallback>{member.name[0]}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <p className="text-sm font-medium">{member.name}</p>
-                                {member.linkedinUrl && (
-                                  <a 
-                                    href={member.linkedinUrl} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-[#0077B5] hover:opacity-80"
-                                  >
-                                    <Linkedin className="w-3 h-3" />
-                                  </a>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground">{member.role}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   </div>
 
                   <div className="flex flex-row lg:flex-col gap-2">
                     <Dialog open={chatOpen && selectedTeam?.id === team.id} onOpenChange={(open) => {
                       setChatOpen(open);
-                      if (open) setSelectedTeam(team);
+                      if (open) openTeamChat(team);
                     }}>
                       <DialogTrigger asChild>
-                        <Button variant="default" className="flex-1 lg:flex-none" onClick={() => openTeamChat(team)}>
+                        <Button variant="outline" onClick={() => openTeamChat(team)}>
                           <MessageCircle className="w-4 h-4 mr-2" />
                           Team Chat
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-lg">
+                      <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
                         <DialogHeader>
                           <DialogTitle className="flex items-center gap-2">
                             <MessageCircle className="w-5 h-5" />
-                            {team.name} - Team Chat
+                            {team.name} Chat
                           </DialogTitle>
                         </DialogHeader>
-                        <div className="flex flex-col h-[400px]">
-                          <div className="flex-1 overflow-y-auto space-y-3 p-4 bg-muted/30 rounded-lg">
-                            {(teamMessages[team.id] || []).map((msg) => (
-                              <div 
-                                key={msg.id} 
-                                className={`flex ${msg.senderId === 'm1' ? 'justify-end' : 'justify-start'}`}
+                        <div className="flex-1 overflow-y-auto space-y-4 py-4 min-h-[300px] max-h-[400px]">
+                          {teamMessages.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">
+                              No messages yet. Start the conversation!
+                            </p>
+                          ) : (
+                            teamMessages.map((msg) => (
+                              <div
+                                key={msg.id}
+                                className={`flex gap-3 ${msg.user_id === user?.id ? 'flex-row-reverse' : ''}`}
                               >
-                                <div className={`max-w-[70%] p-3 rounded-lg ${
-                                  msg.senderId === 'm1' 
-                                    ? 'bg-primary text-primary-foreground' 
-                                    : 'bg-card border border-border'
-                                }`}>
-                                  {msg.senderId !== 'm1' && (
-                                    <p className="text-xs font-medium mb-1 opacity-70">{msg.senderName}</p>
-                                  )}
-                                  <p className="text-sm">{msg.message}</p>
-                                  <p className={`text-xs mt-1 ${msg.senderId === 'm1' ? 'opacity-70' : 'text-muted-foreground'}`}>
-                                    {formatTime(msg.timestamp)}
-                                  </p>
+                                <Avatar className="w-8 h-8">
+                                  <AvatarFallback>
+                                    {msg.profile?.full_name?.[0] || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className={`max-w-[70%] ${msg.user_id === user?.id ? 'text-right' : ''}`}>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs font-medium">
+                                      {msg.user_id === user?.id ? "You" : (msg.profile?.full_name || "User")}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatTime(msg.created_at)}
+                                    </span>
+                                  </div>
+                                  <div className={`rounded-xl px-4 py-2 ${
+                                    msg.user_id === user?.id 
+                                      ? 'bg-primary text-primary-foreground' 
+                                      : 'bg-muted'
+                                  }`}>
+                                    <p className="text-sm">{msg.message}</p>
+                                  </div>
                                 </div>
                               </div>
-                            ))}
-                            <div ref={chatEndRef} />
-                          </div>
-                          <div className="flex gap-2 mt-4">
-                            <Input 
-                              placeholder="Type a message..."
-                              value={newMessage}
-                              onChange={(e) => setNewMessage(e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                            />
-                            <Button onClick={sendMessage}>
-                              <Send className="w-4 h-4" />
-                            </Button>
-                          </div>
+                            ))
+                          )}
+                          <div ref={chatEndRef} />
+                        </div>
+                        <div className="flex gap-2 pt-4 border-t">
+                          <Input
+                            placeholder="Type a message..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                          />
+                          <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                            <Send className="w-4 h-4" />
+                          </Button>
                         </div>
                       </DialogContent>
                     </Dialog>
-                    <Button variant="outline" className="flex-1 lg:flex-none">
-                      View Details
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
                   </div>
                 </div>
               </motion.div>
@@ -537,12 +585,13 @@ export function TeamsContent() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Search teams, projects, hackathons..."
+                placeholder="Search teams..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
+            
             <div className="flex gap-2 flex-wrap">
               {interestTags.map((tag) => (
                 <Button
@@ -557,161 +606,74 @@ export function TeamsContent() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {filteredOpenTeams.map((team, index) => {
-              const isPending = pendingRequests.includes(team.id);
-              return (
+          {filteredOpenTeams.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-12"
+            >
+              <Search className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Teams Found</h3>
+              <p className="text-muted-foreground mb-4">
+                Be the first to create a team in this area!
+              </p>
+              <Button onClick={() => setCreateDialogOpen(true)} disabled={!user}>
+                Create Team
+              </Button>
+            </motion.div>
+          ) : (
+            <div className="space-y-4">
+              {filteredOpenTeams.map((team, index) => (
                 <motion.div
                   key={team.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 * index }}
-                  className="p-6 rounded-2xl bg-card border border-border shadow-soft hover:shadow-card transition-all duration-300"
+                  transition={{ duration: 0.5, delay: 0.1 * Math.min(index, 5) }}
+                  className="p-6 rounded-2xl bg-card border border-border shadow-soft hover:shadow-card transition-all"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-display font-semibold">{team.name}</h3>
-                    <Badge variant="default" className="bg-success text-success-foreground">
-                      Open
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-muted-foreground text-sm mb-4">{team.description}</p>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {team.interests.map((interest) => (
-                      <Badge key={interest} variant="secondary">{interest}</Badge>
-                    ))}
-                  </div>
-
-                  {team.currentProject && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                      {team.projectType === "hackathon" ? (
-                        <Trophy className="w-4 h-4 text-accent" />
-                      ) : (
-                        <Target className="w-4 h-4 text-primary" />
-                      )}
-                      <span>{team.currentProject}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-display font-semibold">{team.name}</h3>
+                      <p className="text-muted-foreground text-sm">{team.description || "No description"}</p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {team.interests.map((interest) => (
+                          <Badge key={interest} variant="secondary">{interest}</Badge>
+                        ))}
+                      </div>
                     </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex -space-x-2">
-                      {team.members.slice(0, 3).map((member) => (
-                        <Avatar key={member.id} className="w-8 h-8 border-2 border-card">
-                          <AvatarFallback>{member.name[0]}</AvatarFallback>
-                        </Avatar>
-                      ))}
-                      {team.members.length > 3 && (
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs border-2 border-card">
-                          +{team.members.length - 3}
-                        </div>
-                      )}
-                    </div>
-                    <Button 
-                      size="sm" 
-                      variant={isPending ? "secondary" : "default"}
-                      onClick={() => !isPending && handleRequestToJoin(team.id, team.name)}
-                      disabled={isPending}
+                    <Button
+                      onClick={() => handleRequestToJoin(team.id, team.name)}
+                      disabled={!user || pendingRequests.includes(team.id)}
+                      variant={pendingRequests.includes(team.id) ? "outline" : "default"}
                     >
-                      {isPending ? (
+                      {pendingRequests.includes(team.id) ? (
                         <>
-                          <Clock className="w-4 h-4 mr-1" />
-                          Request Sent
+                          <Clock className="w-4 h-4 mr-2" />
+                          Requested
                         </>
                       ) : (
-                        "Request to Join"
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Request to Join
+                        </>
                       )}
                     </Button>
                   </div>
                 </motion.div>
-              );
-            })}
-          </div>
-        </TabsContent>
-
-        {/* Student Matches */}
-        <TabsContent value="matches" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-xl bg-primary/10 border border-primary/20"
-          >
-            <p className="text-sm text-center">
-              <Sparkles className="w-4 h-4 inline mr-2" />
-              Based on your interests and skills, here are students you might want to connect with!
-            </p>
-          </motion.div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {studentMatches.map((student, index) => {
-              const isConnected = connectedStudents.includes(student.id);
-              return (
-                <motion.div
-                  key={student.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 * index }}
-                  className="p-5 rounded-2xl bg-card border border-border shadow-soft hover:shadow-card transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <Avatar className="w-14 h-14">
-                      <AvatarImage src={student.avatar} />
-                      <AvatarFallback className="text-lg">{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
-                    <a 
-                      href={student.linkedinUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-[#0077B5]/10 text-[#0077B5] hover:bg-[#0077B5]/20 transition-colors"
-                    >
-                      <Linkedin className="w-5 h-5" />
-                    </a>
-                  </div>
-
-                  <h3 className="font-semibold mb-1">{student.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-1">{student.college}</p>
-                  <p className="text-xs text-muted-foreground mb-3">{student.year}</p>
-
-                  <div className="flex items-center gap-1 text-sm font-medium text-primary mb-3">
-                    <Star className="w-4 h-4 fill-primary" />
-                    {student.matchScore}% Match
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <div className="flex flex-wrap gap-1">
-                      {student.interests.map((interest) => (
-                        <Badge key={interest} variant="outline" className="text-xs">{interest}</Badge>
-                      ))}
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {student.skills.slice(0, 3).map((skill) => (
-                        <Badge key={skill} variant="secondary" className="text-xs">{skill}</Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button 
-                    variant={isConnected ? "secondary" : "default"} 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => !isConnected && handleConnectStudent(student.id, student.name)}
-                    disabled={isConnected}
-                  >
-                    {isConnected ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Request Sent
-                      </>
-                    ) : (
-                      "Connect"
-                    )}
-                  </Button>
-                </motion.div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
+
+      {/* Footer */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center text-sm text-muted-foreground py-4"
+      >
+        Created by the Students
+      </motion.div>
     </div>
   );
 }
